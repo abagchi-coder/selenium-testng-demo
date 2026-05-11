@@ -1,0 +1,57 @@
+name: Selenium TestNG CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 2 * * 1-5'   # Nightly Mon–Fri at 2 AM UTC
+  workflow_dispatch:          # Manual trigger button
+
+jobs:
+  test:
+    name: Tests on ${{ matrix.browser }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chrome, firefox]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'maven'
+
+      - name: Run Selenium tests
+        run: |
+          mvn clean test \
+            -Dbrowser=${{ matrix.browser }} \
+            -Dheadless=true
+        env:
+          CI: true
+
+      - name: Upload Surefire reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: surefire-report-${{ matrix.browser }}
+          path: target/surefire-reports/
+          retention-days: 30
+
+      - name: Publish test summary
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: TestNG Results (${{ matrix.browser }})
+          path: target/surefire-reports/testng-results.xml
+          reporter: java-junit
+

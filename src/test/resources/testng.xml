@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<suite name="Selenium TestNG Demo - Full Suite" verbose="1" parallel="methods" thread-count="2">
+
+    <listeners>
+        <listener class-name="org.testng.reporters.XMLReporter"/>
+    </listeners>
+
+    <test name="Home Page Tests">
+        <classes>
+            <class name="com.qa.tests.HomeTest"/>
+        </classes>
+    </test>
+
+    <test name="Registration Tests">
+        <classes>
+            <class name="com.qa.tests.RegisterTest"/>
+        </classes>
+    </test>
+
+</suite>
