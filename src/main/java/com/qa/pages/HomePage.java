@@ -5,24 +5,35 @@ import org.openqa.selenium.WebDriver;
 
 public class HomePage extends BasePage {
 
-    private final By registerLink  = By.linkText("Register");
-    private final By pageHeading   = By.tagName("h1");
-    private final By navBar        = By.id("navbarNav");
+    // FIXED: actual nav container is div#abcd, not navbarNav
+    private final By navContainer   = By.id("abcd");
+    private final By signInButton   = By.id("btn1");
+    private final By registerButton = By.id("btn2");  // "Skip Sign In"
+    private final By emailInput     = By.id("email");
+    private final By logo           = By.id("logo");
 
     public HomePage(WebDriver driver) {
         super(driver);
     }
 
-    public boolean isNavBarDisplayed() {
-        return isDisplayed(navBar);
+    public boolean isNavDisplayed() {
+        return isDisplayed(navContainer);
     }
 
-    public String getHeadingText() {
-        return getText(pageHeading);
+    public boolean isLogoDisplayed() {
+        return isDisplayed(logo);
+    }
+
+    public boolean isEmailInputDisplayed() {
+        return isDisplayed(emailInput);
     }
 
     public RegisterPage clickRegister() {
-        click(registerLink);
+        click(registerButton);
         return new RegisterPage(driver);
+    }
+
+    public void clickSignIn() {
+        click(signInButton);
     }
 }

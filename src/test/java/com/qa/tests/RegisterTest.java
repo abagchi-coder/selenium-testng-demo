@@ -9,16 +9,16 @@ import org.testng.annotations.Test;
 public class RegisterTest extends BaseTest {
 
     @Test(groups = {"smoke", "regression"},
-          description = "Verify registration form is displayed")
+            description = "Verify registration form is displayed")
     public void tc004_registerFormDisplayed() {
         HomePage home = new HomePage(driver);
         RegisterPage register = home.clickRegister();
         Assert.assertTrue(register.isFormDisplayed(),
-            "Registration form should be visible");
+                "Registration form should be visible");
     }
 
     @Test(groups = {"regression"},
-          description = "Verify user can fill registration form fields")
+            description = "Verify user can fill all registration form fields")
     public void tc005_fillRegistrationForm() {
         HomePage home = new HomePage(driver);
         RegisterPage register = home.clickRegister();
@@ -27,9 +27,15 @@ public class RegisterTest extends BaseTest {
                 .enterLastName("Bagchi")
                 .enterEmail("test.qa@example.com")
                 .enterPhone("9876543210")
-                .selectMale();
+                .selectMale()
+                .selectHobby1()
+                .enterPassword("Test@1234")
+                .enterConfirmPassword("Test@1234");
 
-        Assert.assertEquals(driver.getCurrentUrl().contains("Register"), true,
-            "Should remain on register page after filling form");
+        // Verify we're still on the register page
+        Assert.assertTrue(
+                driver.getCurrentUrl().contains("Register"),
+                "Should remain on Register page after filling form"
+        );
     }
 }
