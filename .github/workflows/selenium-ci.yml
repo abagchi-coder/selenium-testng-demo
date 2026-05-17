@@ -6,8 +6,8 @@ on:
   pull_request:
     branches: [main]
   schedule:
-    - cron: '0 2 * * 1-5'   # Nightly Mon–Fri at 2 AM UTC
-  workflow_dispatch:          # Manual trigger button
+    - cron: '0 2 * * 1-5'
+  workflow_dispatch:
 
 jobs:
   test:
@@ -31,11 +31,26 @@ jobs:
           java-version: '17'
           cache: 'maven'
 
-      - name: Run Selenium tests
+      # Pin Chrome to stable — avoids version mismatch with WebDriverManager
+      - name: Install Chrome (stable)
+        if: matrix.browser == 'chrome'
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
+
+      # Install Firefox explicitly — not always present on ubuntu-latest
+      - name: Install Firefox
+        if: matrix.browser == 'firefox'
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y firefox
+
+      - name: Run tests
         run: |
           mvn clean test \
             -Dbrowser=${{ matrix.browser }} \
-            -Dheadless=true
+            -Dheadless=true \
+            -Dsurefire.useFile=false
         env:
           CI: true
 
@@ -46,12 +61,3 @@ jobs:
           name: surefire-report-${{ matrix.browser }}
           path: target/surefire-reports/
           retention-days: 30
-
-      - name: Publish test summary
-        uses: dorny/test-reporter@v1
-        if: always()
-        with:
-          name: TestNG Results (${{ matrix.browser }})
-          path: target/surefire-reports/testng-results.xml
-          reporter: java-junit
-

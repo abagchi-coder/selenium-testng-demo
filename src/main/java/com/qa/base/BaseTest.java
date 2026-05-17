@@ -2,13 +2,19 @@ package com.qa.base;
 
 import com.qa.utils.ConfigReader;
 import io.github.bonigarcia.wdm.WebDriverManager;
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.firefox.FirefoxOptions;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
+import org.openqa.selenium.JavascriptExecutor;
+
+import java.time.Duration;
 
 public class BaseTest {
 
@@ -41,13 +47,43 @@ public class BaseTest {
         }
 
         driver.manage().window().maximize();
+
+        driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(ConfigReader.getImplicitWait()));
+        driver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(30));
         driver.get(ConfigReader.getBaseUrl());
+        // Wait for basic page load
+        new WebDriverWait(driver, Duration.ofSeconds(15))
+                .until(ExpectedConditions.presenceOfElementLocated(By.tagName("body")));
+        waitForAngular();
     }
 
-    @AfterMethod
-    public void tearDown() {
-        if (driver != null) {
-            driver.quit();
+    private void waitForAngular() {
+        try {
+            JavascriptExecutor js = (JavascriptExecutor) driver;
+            WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(15));
+
+            // Wait for document ready
+            wait.until(d -> js.executeScript(
+                    "return document.readyState").equals("complete"));
+
+            // Wait for Angular to bootstrap if present
+            Boolean angularExists = (Boolean) js.executeScript(
+                    "return typeof angular !== 'undefined'");
+
+            if (Boolean.TRUE.equals(angularExists)) {
+                wait.until(d -> {
+                    try {
+                        return (Boolean) js.executeScript(
+                                "return angular.element(document.body).injector() !== undefined");
+                    } catch (Exception e) {
+                        return false;
+                    }
+                });
+            }
+            Thread.sleep(500);
+
+        } catch (Exception e) {
+            System.out.println("Angular wait skipped: " + e.getMessage());
         }
     }
 }
