@@ -49,7 +49,7 @@ jobs:
 
       - name: Install Geckodriver
         if: matrix.browser == 'firefox'
-        uses: browser-actions/setup-geckodriver@v1
+        uses: browser-actions/setup-geckodriver@latest
 
       - name: Run tests
         run: |
