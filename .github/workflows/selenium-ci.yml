@@ -31,26 +31,63 @@ jobs:
           java-version: '17'
           cache: 'maven'
 
-      # Pin Chrome to stable — avoids version mismatch with WebDriverManager
       - name: Install Chrome (stable)
         if: matrix.browser == 'chrome'
-        uses: browser-actions/setup-chrome@v1
+        id: setup-chrome
+        uses: browser-actions/setup-chrome@v2
         with:
           chrome-version: stable
+          install-chromedriver: true
+          install-dependencies: true
 
-      # Install Firefox explicitly — not always present on ubuntu-latest
       - name: Install Firefox
         if: matrix.browser == 'firefox'
-        run: |
-          sudo apt-get update -q
-          sudo apt-get install -y firefox
+        id: setup-firefox
+        uses: browser-actions/setup-firefox@v1
+        with:
+          firefox-version: latest
+
+      - name: Install Geckodriver
+        if: matrix.browser == 'firefox'
+        uses: browser-actions/setup-geckodriver@v1
 
       - name: Run tests
         run: |
-          mvn clean test \
-            -Dbrowser=${{ matrix.browser }} \
-            -Dheadless=true \
+          # Sequential suite avoids parallel WebDriver / driver-manager races in CI
+          cat > ci-testng.xml <<'SUITE'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+          <suite name="CI Suite" verbose="1" parallel="none">
+            <test name="Home Page Tests">
+              <classes>
+                <class name="com.qa.tests.HomeTest"/>
+              </classes>
+            </test>
+            <test name="Registration Tests">
+              <classes>
+                <class name="com.qa.tests.RegisterTest"/>
+              </classes>
+            </test>
+          </suite>
+          SUITE
+
+          MVN_ARGS=(
+            clean test
+            -DsuiteXmlFiles=ci-testng.xml
+            -Dbrowser=${{ matrix.browser }}
+            -Dheadless=true
             -Dsurefire.useFile=false
+          )
+
+          if [ "${{ matrix.browser }}" = "chrome" ]; then
+            MVN_ARGS+=(
+              -Dwebdriver.chrome.driver="${{ steps.setup-chrome.outputs.chromedriver-path }}"
+              -Dwdm.browserVersion="${{ steps.setup-chrome.outputs.chrome-version }}"
+              -Dwdm.chromeDriverVersion="${{ steps.setup-chrome.outputs.chromedriver-version }}"
+            )
+          fi
+
+          mvn "${MVN_ARGS[@]}"
         env:
           CI: true
 
