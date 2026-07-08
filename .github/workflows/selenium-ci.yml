@@ -53,27 +53,9 @@ jobs:
 
       - name: Run tests
         run: |
-          # Sequential suite avoids parallel WebDriver / driver-manager races in CI
-          cat > ci-testng.xml <<'SUITE'
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
-          <suite name="CI Suite" verbose="1" parallel="none">
-            <test name="Home Page Tests">
-              <classes>
-                <class name="com.qa.tests.HomeTest"/>
-              </classes>
-            </test>
-            <test name="Registration Tests">
-              <classes>
-                <class name="com.qa.tests.RegisterTest"/>
-              </classes>
-            </test>
-          </suite>
-          SUITE
-
           MVN_ARGS=(
             clean test
-            -DsuiteXmlFiles=ci-testng.xml
+            -DsuiteXmlFile=src/test/resources/testng-ci.xml
             -Dbrowser=${{ matrix.browser }}
             -Dheadless=true
             -Dsurefire.useFile=false
@@ -82,9 +64,18 @@ jobs:
           if [ "${{ matrix.browser }}" = "chrome" ]; then
             MVN_ARGS+=(
               -Dwebdriver.chrome.driver="${{ steps.setup-chrome.outputs.chromedriver-path }}"
-              -Dwdm.browserVersion="${{ steps.setup-chrome.outputs.chrome-version }}"
-              -Dwdm.chromeDriverVersion="${{ steps.setup-chrome.outputs.chromedriver-version }}"
+              -Dwebdriver.chrome.binary="${{ steps.setup-chrome.outputs.chrome-path }}"
             )
+          else
+            MVN_ARGS+=(
+              -Dwebdriver.firefox.bin="${{ steps.setup-firefox.outputs.firefox-path }}"
+            )
+            GECKO_DRIVER="$(command -v geckodriver || true)"
+            if [ -n "$GECKO_DRIVER" ]; then
+              MVN_ARGS+=(
+                -Dwebdriver.gecko.driver="$GECKO_DRIVER"
+              )
+            fi
           fi
 
           mvn "${MVN_ARGS[@]}"

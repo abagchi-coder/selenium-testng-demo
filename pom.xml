@@ -19,6 +19,7 @@
         <webdrivermanager.version>5.7.0</webdrivermanager.version>
         <extentreports.version>5.1.1</extentreports.version>
         <maven-surefire.version>3.2.5</maven-surefire.version>
+        <suiteXmlFile>src/test/resources/testng.xml</suiteXmlFile>
     </properties>
 
     <dependencies>
@@ -68,7 +69,7 @@
                 <version>${maven-surefire.version}</version>
                 <configuration>
                     <suiteXmlFiles>
-                        <suiteXmlFile>src/test/resources/testng.xml</suiteXmlFile>
+                        <suiteXmlFile>${suiteXmlFile}</suiteXmlFile>
                     </suiteXmlFiles>
                     <systemPropertyVariables>
                         <browser>${browser}</browser>
